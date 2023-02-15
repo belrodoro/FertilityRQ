@@ -13,6 +13,13 @@ bin-release/
 *.ipa
 *.apk
 
+# Only keep dofile folder
+/01_Draft/**
+/02_Data/**
+/04_Output/** 
+/05_RelatedLiterature/**
+/06_Notes/**
+
 # Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
 # should NOT be excluded as they contain compiler settings and other important
 # information for Eclipse / Flash Builder.
