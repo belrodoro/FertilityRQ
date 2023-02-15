@@ -1,0 +1,37 @@
+\begin{table}[htbp]\centering
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\caption{Regression of RQ on individual and couple characteristics}
+\begin{tabular}{l*{1}{c}}
+\hline\hline
+                    &\multicolumn{1}{c}{(1)}         \\
+                    &          RQ         \\
+\hline
+Female              &      -0.082\sym{***}\\
+                    &     (0.021)         \\
+[1em]
+College Degree      &       0.135\sym{***}\\
+                    &     (0.031)         \\
+[1em]
+Employed            &       0.107\sym{**} \\
+                    &     (0.041)         \\
+[1em]
+Log Personal Income &       0.020         \\
+                    &     (0.012)         \\
+[1em]
+Urban               &      -0.073\sym{*}  \\
+                    &     (0.031)         \\
+[1em]
+Married             &       0.241\sym{***}\\
+                    &     (0.037)         \\
+[1em]
+Constant            &      -0.087         \\
+                    &     (0.112)         \\
+\hline
+Observations        &       13346         \\
+\(R^{2}\)           &      0.0681         \\
+controls            &Age + Tenure + Wave         \\
+\hline\hline
+\multicolumn{2}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{2}{l}{\footnotesize \sym{*} \(p<0.05\), \sym{**} \(p<0.01\), \sym{***} \(p<0.001\)}\\
+\end{tabular}
+\end{table}

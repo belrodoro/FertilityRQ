@@ -15,8 +15,7 @@ bin-release/
 
 # Only keep dofile folder
 /01_Draft/**
-/02_Data/**
-/04_Output/** 
+/02_Data/** 
 /05_RelatedLiterature/**
 /06_Notes/**
 
