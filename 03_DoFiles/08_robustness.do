@@ -20,9 +20,13 @@ if "`c(username)'"=="Olatz" {
 cd "${samp}"
 
 
-****************************************************
+*==================================================
+*       1 - Different specifications
+*==================================================
+
+*---------------------------
 * using FE
-****************************************************
+*---------------------------
 use newparent_sample.dta, clear
 
 keep if panel=="UKHLS"
@@ -67,6 +71,148 @@ twoway (connected coeff event, lcolor(`Tangerine') lpattern(dash_dot) mcolor(`Ta
 graph display, ysize(5) xsize(9)
 graph export "${graphs}/Presentation/rq_fe.png", replace
 
+
+*---------------------------
+* Callway and Sant'Anna
+*---------------------------
+
+** Using stata packages: 
+*  ssc install drdid, all replace
+*  ssc install csdid, all replace
+
+use newparent_sample.dta, clear
+
+gen 
+
+
+*==================================================
+*       2 - Different measure of RQ
+*==================================================
+*---------------------------
+* factor subjective items
+*---------------------------
+use main_full_data.dta, clear
+
+* factor 
+factor ${items_subj} , pcf factors(5)
+predict rq_subj*	// single factor
+rename rq_subj1 rq_subj
+label variable rq_subj "RQ (Subjective)"
+
+* merge with couple identifiers
+rename pidp f_pidp 
+merge 1:n f_pidp panel wave using "couple_panel.dta", keep(1 3) nogen keepusing(cidp)
+rename (f_pidp cidp) (m_pidp f_cidp)
+merge 1:n m_pidp panel wave using "couple_panel.dta", keep(1 3) nogen keepusing(cidp)
+rename m_pidp pidp
+
+replace cidp = f_cidp if cidp==.
+drop f_cidp
+
+* keep only heterosexual couples 
+drop if cidp==.
+
+* new parents only 
+sort ${unit}
+keep if newparent==1
+
+* set a minimum of 100 per bin
+drop if t_event < -7 | t_event > 21	
+
+* event study  
+event_study rq_subj t_event 2 "${indiv_c} ${couple_c} ib2.wno" cidp "-1(.5).5"
+graph display, ysize(5) xsize(9)
+graph export "${graphs}/rq_01_subj.png", replace
+
+
+*---------------------------
+* factor loadings of parents
+*---------------------------
+use main_full_data.dta, clear
+
+* factor and save
+keep if nchild>0
+factor ${items}, pcf factors(5)
+predict rq_parent*
+
+matrix list r(scoef)
+matrix F = r(scoef)[1..10, 1]
+
+drop rq_parent2 
+rename rq_parent1 rq_parent 
+
+* open sample
+use newparent_sample.dta, clear
+
+* construct rq for all 
+gen rq_parent = 0
+forval xx = 1 (1) 10 {
+	local var : word `xx' of ${items} 
+	qui sum `var'
+	replace rq_parent = rq_parent + ((`var' - `r(mean)')/`r(sd)')*F[`xx',1]
+}
+qui sum rq_parent
+replace rq_parent = (rq_parent - `r(mean)')/`r(sd)'
+label variable rq_parent "RQ (parent scores)"
+
+* set a minimum of 100 per bin
+drop if t_event < -7 | t_event > 21	
+
+* event study  
+event_study rq_parent t_event 2 "${indiv_c} ${couple_c} ib2.wno" cidp "-1(.5).5"
+graph display, ysize(5) xsize(9)
+graph export "${graphs}/rq_01_parent.png", replace
+
+
+
+
+//     ------------------------
+//         Variable |  Factor1 
+//     -------------+----------
+//       screlpards |  0.16118 
+//       screlparrg |  0.16868 
+//       screlparar |  0.15308 
+//       screlparir |  0.16075 
+//       screlparwt |  0.15017 
+//       screlparei |  0.15601 
+//       screlparcd |  0.16881 
+//       screlparks |  0.12870 
+//      scparoutint |  0.11868 
+//       screlhappy |  0.16246 
+//     ------------------------
+
+
+use main_full_data.dta, clear
+
+replace event = 0 if event==1 & rq==.
+egen aux = max(event), by(pidp)
+keep if aux==1
+
+keep if rq!=.
+sort ${unit}
+
+br pidp t_event
+
+drop aux
+gen aux = (t_event==-4 |t_event==-3 | t_event==-2 | t_event==-1)
+ereplace aux = max(aux), by(pidp)
+keep if aux==1
+drop aux
+gen aux = (t_event==3 | t_event==2 | t_event==1)
+ereplace aux = max(aux), by(pidp)
+keep if aux==1
+drop aux
+gen aux = (t_event==6 | t_event==5 | t_event==4)
+ereplace aux = max(aux), by(pidp)
+keep if aux==1
+
+drop if t_event < -4 | t_event > 6	
+event_study rq t_event 2 "${indiv_c} ${couple_c} ib2.wno" pidp "-1(.5).5"
+
+
+*==================================================
+*       3 - Sample selection issues 
+*==================================================
 
 ****************************************************
 * couples that don't split
@@ -227,128 +373,3 @@ twoway (rarea  ci_lb ci_ub event ,  sort color(${Tangerine}) fint(inten30) lw(no
 	   legend(off) 
 graph display, ysize(5) xsize(9)
 graph export "${graphs}/Presentation/rq_base.png", replace
-
-****************************************************
-* use a different rq measure 
-****************************************************
-*---------------------------
-* factor subjective items
-*---------------------------
-use main_full_data.dta, clear
-
-* factor 
-factor ${items_subj} , pcf factors(5)
-predict rq_subj*	// single factor
-rename rq_subj1 rq_subj
-label variable rq_subj "RQ (Subjective)"
-
-* merge with couple identifiers
-rename pidp f_pidp 
-merge 1:n f_pidp panel wave using "couple_panel.dta", keep(1 3) nogen keepusing(cidp)
-rename (f_pidp cidp) (m_pidp f_cidp)
-merge 1:n m_pidp panel wave using "couple_panel.dta", keep(1 3) nogen keepusing(cidp)
-rename m_pidp pidp
-
-replace cidp = f_cidp if cidp==.
-drop f_cidp
-
-* keep only heterosexual couples 
-drop if cidp==.
-
-* new parents only 
-sort ${unit}
-keep if newparent==1
-
-* set a minimum of 100 per bin
-drop if t_event < -7 | t_event > 21	
-
-* event study  
-event_study rq_subj t_event 2 "${indiv_c} ${couple_c} ib2.wno" cidp "-1(.5).5"
-graph display, ysize(5) xsize(9)
-graph export "${graphs}/rq_01_subj.png", replace
-
-
-*---------------------------
-* factor loadings of parents
-*---------------------------
-use main_full_data.dta, clear
-
-* factor and save
-keep if nchild>0
-factor ${items}, pcf factors(5)
-predict rq_parent*
-
-matrix list r(scoef)
-matrix F = r(scoef)[1..10, 1]
-
-drop rq_parent2 
-rename rq_parent1 rq_parent 
-
-* open sample
-use newparent_sample.dta, clear
-
-* construct rq for all 
-gen rq_parent = 0
-forval xx = 1 (1) 10 {
-	local var : word `xx' of ${items} 
-	qui sum `var'
-	replace rq_parent = rq_parent + ((`var' - `r(mean)')/`r(sd)')*F[`xx',1]
-}
-qui sum rq_parent
-replace rq_parent = (rq_parent - `r(mean)')/`r(sd)'
-label variable rq_parent "RQ (parent scores)"
-
-* set a minimum of 100 per bin
-drop if t_event < -7 | t_event > 21	
-
-* event study  
-event_study rq_parent t_event 2 "${indiv_c} ${couple_c} ib2.wno" cidp "-1(.5).5"
-graph display, ysize(5) xsize(9)
-graph export "${graphs}/rq_01_parent.png", replace
-
-
-
-
-//     ------------------------
-//         Variable |  Factor1 
-//     -------------+----------
-//       screlpards |  0.16118 
-//       screlparrg |  0.16868 
-//       screlparar |  0.15308 
-//       screlparir |  0.16075 
-//       screlparwt |  0.15017 
-//       screlparei |  0.15601 
-//       screlparcd |  0.16881 
-//       screlparks |  0.12870 
-//      scparoutint |  0.11868 
-//       screlhappy |  0.16246 
-//     ------------------------
-
-
-use main_full_data.dta, clear
-
-replace event = 0 if event==1 & rq==.
-egen aux = max(event), by(pidp)
-keep if aux==1
-
-keep if rq!=.
-sort ${unit}
-
-br pidp t_event
-
-drop aux
-gen aux = (t_event==-4 |t_event==-3 | t_event==-2 | t_event==-1)
-ereplace aux = max(aux), by(pidp)
-keep if aux==1
-drop aux
-gen aux = (t_event==3 | t_event==2 | t_event==1)
-ereplace aux = max(aux), by(pidp)
-keep if aux==1
-drop aux
-gen aux = (t_event==6 | t_event==5 | t_event==4)
-ereplace aux = max(aux), by(pidp)
-keep if aux==1
-
-drop if t_event < -4 | t_event > 6	
-event_study rq t_event 2 "${indiv_c} ${couple_c} ib2.wno" pidp "-1(.5).5"
-
