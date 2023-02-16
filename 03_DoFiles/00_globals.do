@@ -3,8 +3,8 @@
 *----------------------------------------------------------------------------
 
 if "`c(username)'"=="belen" {
-    global base "C:/Users/belen/OneDrive - Istituto Universitario Europeo/FertilityRQ"	
-	global path "${base}/02_Data/Understanding_Society/stata/stata13_se"
+    global base "C:\Users\belen\OneDrive\Documentos\GitHub\FertilityRQ"	
+	global path "C:\Users\belen\OneDrive - Istituto Universitario Europeo\EUI\BHSP - US\Data files\stata\stata13_se"
 }   
 if "`c(username)'"=="Olatz" {
 	global base "C:/Users/Olatz/OneDrive - Istituto Universitario Europeo/01_Research/FertilityRQ"
@@ -38,7 +38,7 @@ global gbeh2_bhps_w b c d e f g h i j k l m n o p q r	// gender behavior items (
 global spl_w   b c d e f g h i j k l			// parental leave
 
 * Control variable groups
-global all_c	"dvage birthy sex racel qfhigh_dv employ jbterm1 jbsemp paynu_dv fimnlabgrs_dv fimngrs_dv fimnnet_dv ndepchl_dv hhtype_dv scghql jbhrs scghq1_dv country urban_dv istrtdaty"
+global all_c	"dvage birthy sex racel qfhigh_dv employ jbterm1 jbsemp paynu_dv fimnlabgrs_dv fimngrs_dv fimnnet_dv ndepchl_dv hhtype_dv scghql jbhrs jbstat scghq1_dv country urban_dv istrtdaty month"
 
 global rq_c    "screlpar* screlhappy scdas*"
 global rq2_c    "scparoutint"

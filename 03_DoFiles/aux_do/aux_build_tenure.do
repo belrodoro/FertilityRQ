@@ -128,7 +128,7 @@ replace mrgend = 0 if mrgend == 4 & status[_n+1]==status[_n] & partner[_n+1] == 
 duplicates drop pidp lastinty partner status starty endy mrgend cohend pid divorcey ///
 			    divorce_if ttl_spells ttl_married ttl_civil_partnership ttl_cohabit ///
 			    ever_married ever_civil_partnership ever_cohabit hhorig sampst ///
-			    ever_proxy_ukhls ever_proxy_bhps , force
+				ever_proxy_ukhls ever_proxy_bhps, force
 
 * identical in the relevant variables 
 duplicates tag pidp partner starty endy if partner!=. & endy!=. & starty!=., gen(flag)

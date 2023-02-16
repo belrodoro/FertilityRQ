@@ -113,7 +113,7 @@ clear all
 set more off 
 
 if "`c(username)'"=="belen" {
-	do "C:\Users\belen\OneDrive - Istituto Universitario Europeo\FertilityRQ\03_DoFiles\00_globals.do"
+	do "C:/Users/`c(username)'/OneDrive/Documentos/GitHub/FertilityRQ/03_DoFiles/00_globals.do"
 }   
 if "`c(username)'"=="Olatz" {
 	do "C:/Users/`c(username)'/OneDrive - Istituto Universitario Europeo/01_Research/FertilityRQ/03_DoFiles/00_globals.do"
@@ -122,7 +122,7 @@ if "`c(username)'"=="Olatz" {
 ****************************************************************************
 **************************** INDIVIDUAL PANEL ******************************
 ****************************************************************************
-
+quietly{
 *============================================================================
 *				1 - Build and merge raw data files 
 *============================================================================
@@ -802,10 +802,13 @@ forval sx=0/1 {
 	replace cidp = `r(max)' + aux_cidp if aux==1
 
 	drop aux*
-
+  
 
 	* 4. keep only heterosexual couples 
-	duplicates drop cidp panel wave, force
+	egen aux1 = seq(), by(cidp panel wave)
+	drop if aux1> 1
+	drop aux1
+	*duplicates drop cidp panel wave, force
 
 	* 5. change variables
 	if `sx'==0 {
@@ -893,7 +896,8 @@ replace newparent = 1 if (f_newmum==1 & f_nchild<2) | (m_newdad==1 & m_nchild<2)
 
 gen dadlv = newparent==1 & m_parentlv==1
 ereplace dadlv = max(dadlv), by(cidp)
- 
+
+}
  
 
 ******************************

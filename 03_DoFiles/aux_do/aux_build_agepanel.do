@@ -52,10 +52,10 @@ foreach wno of global UKHLSwaves {
 	
 	* Save relevant variables 
 	if "`wno'"=="a" {
-		keep pidp sex dvage birthy marstat_dv ppid intdaty_dv nchild_dv
+		keep pidp sex dvage birthy marstat_dv ppid intdaty_dv nchild_dv month
 	}
 	if "`wno'"!="a" {
-		keep pidp sex dvage birthy marstat_dv /*livesp_dv cohab_dv*/ ppid /* sppid employ fnpid mnpid npn_dv*/ intdaty_dv nchild_dv newdad newmum
+		keep pidp sex dvage birthy marstat_dv  month/*livesp_dv cohab_dv*/ ppid /* sppid employ fnpid mnpid npn_dv*/ intdaty_dv nchild_dv newdad newmum
 	}
 	rename (dvage marstat_dv intdaty_dv) (age mastat intdaty)
 	mvdecode *, mv(-10/-1)  
@@ -93,14 +93,25 @@ foreach wv of global BHPSwaves {
 	local wvno `wvno'+1
 }
 
+
 * Understanding Society
+
 replace year = intdaty if panel=="UKHLS"
 drop intdaty
-local wvno 2009
-foreach wv of global UKHLSwaves {
-	replace year=`wvno' if missing(year) & wave=="`wv'" & panel=="UKHLS"
-	local wvno `wvno'+1
+local list5 "a b c d e f g h i j k l"
+local list6 "2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 "
+
+local n : word count `list5'
+
+forvalues i=1/`n'{
+
+local c: word `i' of `list5'
+local d: word `i' of `list6'
+replace year=`d' if wave=="`c'" & month<13  & year==. | year<0  & month!=. & panel=="ukhls"   // input obs to one sample year or another depending on the year they were interview within a wave and if information about starting year is missing
+replace year=`d'+1 if wave=="`c'" & month>=13  & year==. | year<0 & month!=. & panel=="ukhls"
+
 }
+
 
 
 *---------------------------------------------------------------------------
