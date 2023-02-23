@@ -52,10 +52,10 @@ foreach wno of global UKHLSwaves {
 	
 	* Save relevant variables 
 	if "`wno'"=="a" {
-		keep pidp sex dvage birthy marstat_dv ppid intdaty_dv nchild_dv
+		keep pidp sex dvage birthy marstat_dv ppid intdat* nchild_dv
 	}
 	if "`wno'"!="a" {
-		keep pidp sex dvage birthy marstat_dv /*livesp_dv cohab_dv*/ ppid /* sppid employ fnpid mnpid npn_dv*/ intdaty_dv nchild_dv newdad newmum
+		keep pidp sex dvage birthy marstat_dv /*livesp_dv cohab_dv*/ ppid /* sppid employ fnpid mnpid npn_dv*/ intdat* nchild_dv newdad newmum
 	}
 	rename (dvage marstat_dv intdaty_dv) (age mastat intdaty)
 	mvdecode *, mv(-10/-1)  
@@ -95,7 +95,6 @@ foreach wv of global BHPSwaves {
 
 * Understanding Society
 replace year = intdaty if panel=="UKHLS"
-drop intdaty
 local wvno 2009
 foreach wv of global UKHLSwaves {
 	replace year=`wvno' if missing(year) & wave=="`wv'" & panel=="UKHLS"
@@ -107,64 +106,117 @@ foreach wv of global UKHLSwaves {
 * 3 . correct cohort and age variables 
 *---------------------------------------------------------------------------
 
-* Birth year inconsistencies
-egen temp3 = nvals(birthy), by(pidp)
-egen temp5 = max(temp3), by(pidp) // how many birthyears per individual
-egen temp4 = max(birthy), by(pidp) // maximum birthy by indiv
-replace birthy = temp4 if missing(birthy) & temp5==1 // correct birthy for missing birthyears withouth inconsistencies 
-drop temp3 temp4
+*-------------------------------------------
+* correct birthyear
+*-------------------------------------------
+replace birthy = . if birthy>2022
 
-egen byoft = nvals(year), by(pidp birthy) // how often does a birthy appear per indiv?
-egen maxby = max(byoft), by(pidp)
-gen maxid = (byoft==maxby)
-replace maxid=. if maxid==1 & birthy==.
-gen temp3 = (maxid*birthy)
-egen temp4 = max(temp3), by(pidp)
-	replace temp4=. if temp4==0
-replace birthy = temp4 if temp5>1 & maxid==0 // correct birthy with the value that appears most often per individual
-drop temp*
+egen birthy_nv = nvals(birthy), by(pidp)		// number of birthyears per person
+ereplace birthy_nv = max(birthy_nv), by(pidp)
 
-egen temp3 = nvals(birthy), by(pidp)
-egen temp5 = max(temp3), by(pidp)
-gen wrong_by = (temp5>1 & !missing(temp5)) // generate id for those we couldn't correct
+* use the one most often 
+bys pidp birthy: gen oft = _N		            // frequency of each birth year
+egen oft_nv = nvals(oft), by(pidp)
 
-drop temp* byoft maxby maxid
+egen oft_max = max(oft), by(pidp)               // most frequent
+
+gen birthy_oft = birthy if oft==oft_max & birthy_nv>1 & oft_nv>1
+ereplace birthy_oft = max(birthy_oft), by(pidp)
+replace oft_nv = 1 if birthy_oft==. // not count if most often is missing
+
+replace birthy = birthy_oft if birthy_oft!=. & birthy!=. & birthy_nv>1 & oft_nv>1
+replace birthy_nv = 1 if birthy_nv>1 & oft_nv>1 
+
+drop oft oft_nv oft_max birthy_oft
+
+* else, whichever coincides with age 
+gen dvage = year - birthy
+
+gen flag = age!=dvage & year!=. & birthy!=. & age!=.
+
+bys pidp flag: gen oft = _N		        
+egen oft_nv = nvals(oft), by(pidp)
+
+egen oft_max = max(oft), by(pidp)               // most frequent
+
+gen birthy_oft = birthy if oft==oft_max & birthy!=. &  birthy_nv>1 & oft_nv>1
+ereplace birthy_oft = max(birthy_oft), by(pidp)
+
+replace birthy = birthy_oft if birthy_oft!=. & birthy_nv>1 & oft_nv>1
+replace birthy_nv = 1 if birthy_nv>1 & oft_nv>1
+
+drop oft oft_nv oft_max birthy_oft flag dvage
+
+* else, whichever comes first
+sort ${unit}
+egen first = seq() if birthy!=., by(pidp)
+replace first = . if first!=1
+
+gen birthy_oft = birthy if birthy!=. & first==1 & birthy_nv>1
+ereplace birthy_oft = max(birthy_oft), by(pidp)
+
+replace birthy = birthy_oft if birthy_oft!=. & birthy_nv>1
+
+drop first birthy_nv birthy_oft
+
+* fill the missing when birthy is ever available 
+ereplace birthy = max(birthy), by(pidp)
+
+* individual with no birthy ever 
+
+* fill with year and age 
+replace birthy = year-age if birthy==.
+
+egen birthy_nv = nvals(birthy), by(pidp)		// number of birthyears per person
+ereplace birthy_nv = max(birthy_nv), by(pidp)
+
+* use the one most often 
+bys pidp birthy: gen oft = _N		            // frequency of each birth year
+egen oft_nv = nvals(oft), by(pidp)
+
+egen oft_max = max(oft), by(pidp)               // most frequent
+
+gen birthy_oft = birthy if oft==oft_max & birthy_nv>1 & oft_nv>1
+ereplace birthy_oft = max(birthy_oft), by(pidp)
+replace oft_nv = 1 if birthy_oft==. // not count if most often is missing
+
+replace birthy = birthy_oft if birthy_oft!=. & birthy!=. & birthy_nv>1 & oft_nv>1
+replace birthy_nv = 1 if birthy_nv>1 & oft_nv>1 
+
+drop oft oft_nv oft_max birthy_oft
+
+* else, whichever comes first
+sort ${unit}
+egen first = seq() if birthy!=., by(pidp)
+replace first = . if first!=1
+
+gen birthy_oft = birthy if birthy!=. & first==1 & birthy_nv>1
+ereplace birthy_oft = max(birthy_oft), by(pidp)
+
+replace birthy = birthy_oft if birthy_oft!=. & birthy_nv>1
+
+drop first birthy_nv birthy_oft
+
+* whenever not repeated
+gen flag = birthy==.
+ereplace flag = max(flag), by(pidp)
+
+ereplace birthy = max(birthy), by(pidp)
+
+drop flag
 
 
-* Missing age and cohort
-replace age = year - birthy if missing(age) & !missing(year) & !missing(birthy)
-replace birthy = year - age if missing(birthy) & !missing(year) & !missing(age)
+*-------------------------------------------
+* correct age 
+*-------------------------------------------
+gen dvage = year - birthy
 
-egen temp3 = nvals(birthy), by(pidp)
-egen temp5 = max(temp3), by(pidp)
-drop temp3
-egen byoft = nvals(year), by(pidp birthy)
-egen maxby = max(byoft), by(pidp)
-gen maxid = (byoft==maxby)
-replace maxid=. if maxid==1 & birthy==.
-gen temp3 = (maxid*birthy)
-egen temp4 = max(temp3), by(pidp)
-	replace temp4=. if temp4==0
-replace birthy = temp4 if temp5>1 & maxid==0  // correct birthy with the value that appears most often per individual
+gen flag = age!=dvage
+replace flag = 0 if age==dvage-1  // allow for not having had bday that year yet
 
-drop temp*
+replace age = dvage if dvage!=. & dvage>=0
 
-egen temp3 = nvals(birthy), by(pidp)
-egen temp5 = max(temp3), by(pidp)
-replace wrong_by = 1 if temp5>1 & !missing(temp5)
-
-drop temp* byoft maxby maxid
-
-
-* Age and cohort inconsistencies
-gen age2 = year - birthy
-gen aux_age = age != age2
-replace aux_age = 0 if age == age2+1
-replace aux_age = 0 if age == age2-1
-
-replace age = age2 if aux_age==1
-
-drop age2 aux_age
+drop dvage
 
 
 
