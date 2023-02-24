@@ -24,7 +24,7 @@ foreach wno of global BHPSwaves {
 foreach wno of global UKHLSwaves { 
 	local controls_`wno' = "${all_c}"
 	
-	local other_c = "rq rq2 gnorm gbeh gbeh2 spl"
+	local other_c = "rq rq2 gnorm gbeh gbeh2 spl mothrw"
 	foreach vg in `other_c' {								// loop over all other variable groups
 		foreach sw of global `vg'_w {
 			if "`wno'"=="`sw'" {

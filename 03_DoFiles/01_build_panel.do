@@ -150,10 +150,10 @@ cd "${samp}"
 
 use "relquality.dta", clear 																		// characteristics
 	merge 1:1 ${unit} using "apc_file.dta", nogen keepusing(age year birthy mastat sex nchild_dv newmum newdad)	// age, cohort, period 
-	merge 1:1 ${unit} using "relation_panel.dta", nogen keepusing(partner sex child_sex)			// family matrix
+	merge 1:1 ${unit} using "relation_panel.dta", nogen keepusing(partner)			// family matrix
 		rename partner partner_fm
 	merge n:1 pidp year using "mhistory_indiv_year.dta",  keep(1 3)									// marital history 
-	merge n:1 hidp panel wave using "children.dta", keep(1 3) nogen									// child data
+	merge n:1 pidp using "first_child.dta", keep(1 3) nogen									// first child data
 
 
 
@@ -592,10 +592,6 @@ rename nchild_dv nchild
 * Event: First child birth (single child)
 
 * 1. using births in family matrix: trust ch_birthy over nchild (verified)
-merge n:1 pidp using "${samp}/first_child.dta", nogen 
-//     Not matched from master           625,420  (_merge==1)
-//     Matched                           431,753  (_merge==3)
-
 gen event = year==ch_birthy & ch_birthy!=.		
 egen newparent = max(event), by(pidp)			// track new parents
 	
