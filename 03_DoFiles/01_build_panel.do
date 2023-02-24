@@ -141,8 +141,8 @@ cd "${path}"
 // * (4) Household relation history: identify partners
 // quietly do "${dofiles}/aux_do/aux_build_relation_panel.do" 
 //
-// * (3) Information about firstborns
-// quietly do "${dofiles}/aux_do/aux_build_children.do" 
+// * (5) Information about first borns
+// quietly do "${dofiles}/aux_do/aux_child_panel.do" 
 
 
 *** Merge all raw datasets into an individual-year panel ***
@@ -579,79 +579,73 @@ rename *_cat2* **
 
 
 *---------------------------------------------------------------------------
-* (3) Event study 
+* (3) Event study
 *---------------------------------------------------------------------------
+
+// use "${samp}/apc_file.dta", clear
 
 gsort ${unit}
 rename nchild_dv nchild
+// remember that nchild comes from time files (we take it from agepanel.dta). we are only looking at the changes in the number of children residing with you, so we are also counting parents whose adult child moved back with them --> this can all be built before
 
-** First child birth 
-gen event = (nchild==1 & nchild[_n-1]==0 & pidp[_n-1]==pidp[_n])
-replace event = 1 if (newmum==1 |newdad==1) & nchild<2
 
-egen newparent = max(event), by(pidp)
+* Event: First child birth (single child)
 
-* Generate leads and lags 
-gen t_event = 0 if event == 1
+* 1. using births in family matrix: trust ch_birthy over nchild (verified)
+merge n:1 pidp using "${samp}/first_child.dta", nogen 
+//     Not matched from master           625,420  (_merge==1)
+//     Matched                           431,753  (_merge==3)
 
-replace t_event = t_event[_n-1] + 1 if t_event == . & pidp == pidp[_n-1]
-gsort pidp -year 
-replace t_event = t_event[_n-1] - 1 if t_event == . & pidp == pidp[_n-1]
+gen event = year==ch_birthy & ch_birthy!=.		
+egen newparent = max(event), by(pidp)			// track new parents
+	
+
+* 2. first occurrence of children at home
+bysort pidp (panel wave) : gen cum_nchild = sum(nchild) 
+
+replace event = 1 if (newparent==0 & cum_nchild>0 & cum_nchild[_n-1]==0 & pidp[_n-1]==pidp[_n])
+ereplace newparent = max(event), by(pidp)
+
+
+* 3. variable indicating biological parent of new baby
+replace event = 1 if newparent==0 & (newmum==1 |newdad==1) & cum_nchild<2  
+ereplace newparent = max(event), by(pidp)
+
+
+* exclude events before the age of 18 and after 40 for women - 45 for men
+replace event = 0 if age<18 | (age>40 & sex==2) | (age>45 & sex==1)
+ereplace newparent = max(event), by(pidp)
+
+* label variables 
+label variable event "First child birth"
+label variable newparent "Becomes parent during sample"
+
+drop cum_nchild newmum newdad 
+
+
+* Event-time: leads and lags around event setting event to 0 (use wave)
+gen t_event = 0 if event==1
+
+gsort ${unit}
+replace t_event = t_event[_n-1] + 1 if t_event==. & pidp==pidp[_n-1]
+
+gsort pidp -panel -wave
+replace t_event = t_event[_n-1] - 1 if t_event==. & pidp==pidp[_n-1]
 
 gsort ${unit}
 
-* Label
-label variable event   "First child birth indicator"
-label variable t_event "Enumeration of periods around event"
+label variable t_event "Event-time: periods around event"
 
-* First child sex 
-gen ch_sex2 = child_sex if event==1 
-ereplace ch_sex2 = max(ch_sex), by(pidp)
-replace ch_sex2 = . if t_event<0 
-recode ch_sex2 (1 = 0) (2 = 1)
 
-label variable ch_sex "First child sex"
-label define chsex 0 "Boy" 1 "Girl"
-label values ch_sex chsex
+* First child sex
+replace ch_sex = ch_sex - 1 
+label define ba_asex 0 "Boy" 1 "Girl", replace 
 
-** Total number of kids
-egen total_kids = max(nchild), by(pidp)
-replace total_kids = 4 if total_kids>4
-
-** Group: year of first child 
 
 
 
 *---------------------------------------------------------------------------
-* (4) Correct child variables
-*---------------------------------------------------------------------------
-
-* more than one first child
-egen aux1 = min(ch_birthy), by(pidp)			// pick oldest
-gen aux2 = ch_sex if ch_birthy == aux1
-
-egen aux3 = nvals(aux2), by(pidp)				// errors in coding of sex
-bysort pidp ch_sex: gen aux4 = _N if aux3>1		// pick the most frequent 
-egen aux5 = max(aux4) if aux3>1, by(pidp)
-gen aux6 = ch_sex if aux4 == aux5
-ereplace aux6 = max(ch_sex), by(pidp)
-
-replace aux2 = aux6 if aux3>1
-ereplace aux2 = max(aux2), by(pidp)
-
-replace ch_sex = aux2 - 1
-label define sex 0 "Male" 1 "Female", replace
-label values ch_sex sex
-
-drop aux*
-
-* use relation panel data too 
-replace ch_sex = ch_sex2 if ch_sex==.
-ereplace ch_sex = max(ch_sex), by(pidp)
-
-
-*---------------------------------------------------------------------------
-* (5) Parental leave variables
+* (4) Parental leave variables
 *---------------------------------------------------------------------------
 
 * unique value of matlv: when event 
@@ -889,7 +883,6 @@ replace assort = 4 if f_tertiary==1 & m_tertiary==1
 *--------------------------------------------------------------------
 gen newparent = f_newparent
 replace newparent = m_newparent if newparent!=1 & m_newparent!=.
-replace newparent = 1 if (f_newmum==1 & f_nchild<2) | (m_newdad==1 & m_nchild<2)
 
 gen dadlv = newparent==1 & m_parentlv==1
 ereplace dadlv = max(dadlv), by(cidp)

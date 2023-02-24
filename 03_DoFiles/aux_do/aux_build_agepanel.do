@@ -216,7 +216,7 @@ replace flag = 0 if age==dvage-1  // allow for not having had bday that year yet
 
 replace age = dvage if dvage!=. & dvage>=0
 
-drop dvage
+drop dvage flag
 
 
 

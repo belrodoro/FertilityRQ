@@ -1,4 +1,3 @@
-cd "${path}"
 
 tempfile temp_child_panel
 
@@ -152,9 +151,30 @@ merge 1:n ch_pidp using `temp_child_panel', keep(2 3) nogen
 sort pidp ch_birthy
 egen ch_num = seq(), by(pidp)
 
+* total children 
+egen ch_total = max(ch_num), by(pidp)
+label variable ch_total "Total number of biological children"
+
 order pidp sex ch_pidp ch_birthy ch_sex ch_num
 
 notes: individual-child panel
 ***************************************
 save "${samp}/child_panel.dta", replace
+***************************************
+
+*---------------------------------------------------------------------------
+* 6 . save first child panel 
+*---------------------------------------------------------------------------
+
+egen aux = seq(), by(pidp ch_birthy)
+ereplace aux = max(aux), by(pidp ch_birthy)  // identify twins, triplets...
+
+keep if ch_num==1 & aux==1                   // single first children 
+
+drop aux ch_num flag_chsex flag_sex
+
+
+notes: cross-section of individuals and their first born
+***************************************
+save "${samp}/first_child.dta", replace
 ***************************************
