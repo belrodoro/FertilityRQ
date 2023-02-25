@@ -7,11 +7,42 @@
  IMPORTANT: run after building apc files 
 **********************************************************************/
 
-tempfile temp_child_panel
+*---------------------------------------------------------------------------
+* 0 . Family Matrix 
+*---------------------------------------------------------------------------
+
+tempfile family_matrix
+
+use "ukhls/xhhrel.dta" , clear
+
+* only data on biological children 
+keep pidp bcx_*
+mvdecode *, mv(-10/-1)
+	
+* keep parents only
+drop if bcx_N == 0
+
+rename bcx_* *
+rename (pidp_* sex_*) ch_=
+
+* reshape long 
+reshape long ch_pidp_ ch_sex_, i(pidp) j(ch_num) 
+
+drop if ch_pidp_==.
+drop ch_num 
+
+rename *_ *
+rename N ch_total
+label variable ch_total "Total number of biological children"
+
+
+save `family_matrix', replace 
+
 
 *---------------------------------------------------------------------------
 * 1 . Understanding Society
 *---------------------------------------------------------------------------
+tempfile temp_child_panel
 
 tempfile ukhls
 foreach wno of global UKHLSwaves {
@@ -92,11 +123,13 @@ save `bhps', replace
 
 
 *---------------------------------------------------------------------------
-* 3 . append all
+* 3 . append child data
 *---------------------------------------------------------------------------
 
 append using `ukhls'
 sort ${unit}
+
+
 
 *---------------------------------------------------------------------------
 * 4 . create individual - child panel 
@@ -114,6 +147,9 @@ drop wave panel hidp
 
 duplicates drop pidp ch_pidp, force
 sort pidp ch_pidp
+
+* merge with family matrix 
+merge 1:1 pidp ch_pidp using `family_matrix', nogen
 
 save `temp_child_panel', replace
 
@@ -137,10 +173,6 @@ merge 1:n ch_pidp using `temp_child_panel', keep(2 3) nogen
 * order by birth 
 sort pidp ch_birthy
 egen ch_num = seq(), by(pidp)
-
-* total children 
-egen ch_total = max(ch_num), by(pidp)
-label variable ch_total "Total number of biological children"
 
 order pidp sex ch_pidp ch_birthy ch_sex ch_num
 

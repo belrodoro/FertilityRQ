@@ -298,6 +298,22 @@ event_margins gbeh t_event 1 assort_q "ib25.age i.sex i.employ c.lincome i.urban
 graph display, ysize(5) xsize(5)
 graph export "${graphs}/gbeh_07.png", replace
 
+*============================================================= 
+* Each task 
+*============================================================= 
+
+use newparent_sample.dta, clear
+drop if t_event < -4 | t_event > 7
+
+
+event_margins huboss_id t_event 1 gbeh_q "${indiv_c} ${couple_c} ib2.wno" cidp "#5"
+graph rename Graph huboss_id
+
+huboss_id hudiy_id hupots_id hubuys_id hufrys_id huiron_id humops_id husits_dv_id
+
+huboss_id hubuys_id hufrys_id huiron_id humops_id 
+
+
 
 *============================================================= 
 * Domestic Labor Division Agreemen (gbagree)

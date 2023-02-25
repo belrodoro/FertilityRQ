@@ -148,12 +148,12 @@ cd "${path}"
 *** Merge all raw datasets into an individual-year panel ***
 cd "${samp}"
 
-use "relquality.dta", clear 																		// characteristics
+use "relquality.dta", clear 														// characteristics
 	merge 1:1 ${unit} using "apc_file.dta", nogen keepusing(age year birthy mastat sex nchild_dv newmum newdad)	// age, cohort, period 
 	merge 1:1 ${unit} using "relation_panel.dta", nogen keepusing(partner)			// family matrix
 		rename partner partner_fm
-	merge n:1 pidp year using "mhistory_indiv_year.dta",  keep(1 3)									// marital history 
-	merge n:1 pidp using "first_child.dta", keep(1 3) nogen									// first child data
+	merge n:1 pidp year using "mhistory_indiv_year.dta",  keep(1 3)					// marital history 
+	merge n:1 pidp using "first_child.dta", keep(1 3) nogen							// first child data
 
 
 
@@ -582,8 +582,6 @@ rename *_cat2* **
 * (3) Event study
 *---------------------------------------------------------------------------
 
-// use "${samp}/apc_file.dta", clear
-
 gsort ${unit}
 rename nchild_dv nchild
 // remember that nchild comes from time files (we take it from agepanel.dta). we are only looking at the changes in the number of children residing with you, so we are also counting parents whose adult child moved back with them --> this can all be built before
@@ -594,7 +592,7 @@ rename nchild_dv nchild
 * 1. using births in family matrix: trust ch_birthy over nchild (verified)
 gen event = year==ch_birthy & ch_birthy!=.		
 egen newparent = max(event), by(pidp)			// track new parents
-	
+
 
 * 2. first occurrence of children at home
 bysort pidp (panel wave) : gen cum_nchild = sum(nchild) 
@@ -889,7 +887,7 @@ ereplace dadlv = max(dadlv), by(cidp)
 save couple_panel.dta, replace 
 ******************************
 
-use couple_panel.dta, clear 
+// use couple_panel.dta, clear 
 
 
 

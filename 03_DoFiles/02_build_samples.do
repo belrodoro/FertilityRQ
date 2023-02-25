@@ -148,14 +148,17 @@ use main_full_data.dta, clear
 sort ${unit}
 
 * 1. merge with couple identifiers
+drop newparent     // redefine newparent: from the previous sample we will only preserve COUPLES that had a child, so whenever they break up we stop seeing them 
+
 rename pidp f_pidp 
-merge 1:n f_pidp panel wave using "couple_panel.dta", keep(1 3) nogen keepusing(cidp)
-rename (f_pidp cidp) (m_pidp f_cidp)
-merge 1:n m_pidp panel wave using "couple_panel.dta", keep(1 3) nogen keepusing(cidp)
+merge 1:n f_pidp panel wave using "newparent_couples.dta", keep(1 3) nogen keepusing(cidp newparent)
+rename (f_pidp cidp newparent) (m_pidp f_cidp f_newparent)
+merge 1:n m_pidp panel wave using "newparent_couples.dta", keep(1 3) nogen keepusing(cidp newparent)
 rename m_pidp pidp
 
 replace cidp = f_cidp if cidp==.
-drop f_cidp
+replace newparent = f_newparent if newparent==.
+drop f_cidp f_newparent
 
 * 2. keep only heterosexual couples 
 drop if cidp==.
