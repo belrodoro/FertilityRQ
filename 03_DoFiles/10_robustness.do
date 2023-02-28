@@ -352,3 +352,25 @@ keep if aux==1
 drop if t_event < -4 | t_event > 6	
 event_study rq t_event 2 "${indiv_c} ${couple_c} ib2.wno" pidp "-1(.5).5"
 
+
+
+****************************************************
+* callaway and sant'anna  
+****************************************************
+
+use newparent_sample.dta, clear
+
+keep if panel=="UKHLS"
+
+* create treatment cohort variable 
+gen cohort = event * wno
+ereplace cohort = max(cohort), by(pidp)
+
+keep if cohort>0
+
+csdid rq , i(pidp) t(wno) g(cohort) method(dripw)
+
+estat event
+
+csdid_plot 
+

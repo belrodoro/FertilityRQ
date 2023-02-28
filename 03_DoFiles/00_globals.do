@@ -93,12 +93,21 @@ global gbeh "huboss hubuys hufrys huiron humops" // i removed hudiy hupots to ha
 
 colorpalette lin fruits, global opacity(50)
 
+
+*----------------------------------------------------------------------------
+* (5) Packages
+*----------------------------------------------------------------------------
+
 // ssc install unique
 // ssc install egenmore
 
+* Callaway and Sant'Anna 
+// ssc install drdid, all replace
+// ssc install csdid, all replace
+
 
 *----------------------------------------------------------------------------
-* (5) Functions
+* (6) Functions
 *----------------------------------------------------------------------------
 // event study
 capture program drop event_study

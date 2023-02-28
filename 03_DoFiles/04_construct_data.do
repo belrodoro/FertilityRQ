@@ -70,6 +70,8 @@ foreach var of varlist cidp event t_event newparent gbeh* gnorm_q dadlv separate
 
 drop f_*
 
+// attention: since the event variable is defined at the couple level to account for the 1st child of at least one individual in the couple, there are some individuals that have 2 children
+
 **********************************
 save "main_full_data.dta", replace
 **********************************
@@ -80,7 +82,9 @@ save "main_full_data.dta", replace
 
 use "main_full_data.dta", clear 
 
+* newparents 
 keep if newparent == 1
+* heterosexual couples 
 drop if cidp==.
 
 sort ${unit}

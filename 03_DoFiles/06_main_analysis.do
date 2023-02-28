@@ -27,7 +27,10 @@ cd "${samp}"
 use newparent_sample.dta, clear
 
 * set a minimum of 100 per bin
-drop if t_event < -7 | t_event > 21	
+drop if t_event < -5 | t_event > 21	
+
+replace event = 0 if nchild>1 & event==1
+ereplace newparent = max(event), by(pidp)
 
 * controls  
 event_study rq t_event 1 "${indiv_c} ${couple_c} ib2.wno" cidp "-1(.5).5"

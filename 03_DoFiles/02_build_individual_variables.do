@@ -247,6 +247,10 @@ ereplace newparent = max(event), by(pidp)
 replace event = 0 if age<18 | (age>40 & sex==2) | (age>45 & sex==1)
 ereplace newparent = max(event), by(pidp)
 
+* exclude couples with children from previous relationships
+replace event = 0 if nchild>1 & event==1
+ereplace newparent = max(event), by(pidp)
+
 * label variables 
 label variable event "First child birth"
 label variable newparent "Becomes parent during sample"
