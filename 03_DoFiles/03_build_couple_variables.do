@@ -25,11 +25,12 @@ clear all
 set more off 
 
 if "`c(username)'"=="belen" {
-	do "C:\Users\belen\OneDrive - Istituto Universitario Europeo\FertilityRQ\03_DoFiles\00_globals.do"
+	do "C:/Users/belen/Onedrive/Documentos/GitHub/FertilityRQ/03_DoFiles/00_globals.do"
 }   
 if "`c(username)'"=="Olatz" {
 	do "C:/Users/`c(username)'/OneDrive - Istituto Universitario Europeo/01_Research/FertilityRQ/03_DoFiles/00_globals.do"
 }
+
 
 cd "${samp}"
 
@@ -140,7 +141,9 @@ forval sx=0/1 {
 
 
 	* 4. keep only heterosexual couples 
-	duplicates drop cidp panel wave, force
+	egen aux1 = seq(), by(cidp panel wave)
+	drop if aux1 > 1
+	drop aux1
 
 	* 5. change variables
 	if `sx'==0 {
