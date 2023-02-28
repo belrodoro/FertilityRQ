@@ -37,6 +37,8 @@ global gbeh2_bhps_w b c d e f g h i j k l m n o p q r	// gender behavior items (
 			
 global spl_w   b c d e f g h i j k l			// parental leave
 
+global mothrw_w c d e f g h i j k l             // mothers return to work module
+
 * Control variable groups
 global all_c	"dvage birthy sex racel qfhigh_dv employ jbterm1 jbsemp paynu_dv fimnlabgrs_dv fimngrs_dv fimnnet_dv ndepchl_dv hhtype_dv scghql jbhrs scghq1_dv country urban_dv istrtdaty"
 
@@ -48,6 +50,8 @@ global gbeh_c   "hu*"
 global gbeh2_c  "howlng"
 
 global spl_c    "matl*"
+
+global mothrw_c "mlagstu mlagst mlrnot* mlwkfpt mlfutr matleave"
 
 * RQ measure
 global items 	"screlpards screlparrg screlparar screlparir screlparwt screlparei screlparcd screlparks scparoutint screlhappy"	// all items in RQ questionnaire 
@@ -89,12 +93,21 @@ global gbeh "huboss hubuys hufrys huiron humops" // i removed hudiy hupots to ha
 
 colorpalette lin fruits, global opacity(50)
 
+
+*----------------------------------------------------------------------------
+* (5) Packages
+*----------------------------------------------------------------------------
+
 // ssc install unique
 // ssc install egenmore
 
+* Callaway and Sant'Anna 
+// ssc install drdid, all replace
+// ssc install csdid, all replace
+
 
 *----------------------------------------------------------------------------
-* (5) Functions
+* (6) Functions
 *----------------------------------------------------------------------------
 // event study
 capture program drop event_study

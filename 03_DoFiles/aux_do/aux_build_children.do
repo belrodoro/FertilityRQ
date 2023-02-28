@@ -11,7 +11,7 @@ foreach wno of global UKHLSwaves {
 	tempfile wave_`wno'
 	use "ukhls/`wno'_child.dta", clear
 	rename `wno'_* *
-	keep pidp hidp sex birthy dvage
+	keep pidp hidp sex birthy 
 	mvdecode *, mv(-10/-1)  
 	gen wave = "`wno'"
 	save `wave_`wno''	

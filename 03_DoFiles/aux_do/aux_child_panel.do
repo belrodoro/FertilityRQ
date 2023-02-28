@@ -1,20 +1,57 @@
-cd "${path}"
+/**********************************************************************
+ this do file constructs 2 files:
+	- a panel of individual - biological child
+	- a cross-section of individuals and their first borns (no twins)
+ it uses mainly egoalt.dta, but corrects child birthyears using child.dta 
+ 
+ IMPORTANT: run after building apc files 
+**********************************************************************/
 
-tempfile temp_child_panel
+*---------------------------------------------------------------------------
+* 0 . Family Matrix 
+*---------------------------------------------------------------------------
+
+tempfile family_matrix
+
+use "ukhls/xhhrel.dta" , clear
+
+* only data on biological children 
+keep pidp bcx_*
+mvdecode *, mv(-10/-1)
+	
+* keep parents only
+drop if bcx_N == 0
+
+rename bcx_* *
+rename (pidp_* sex_*) ch_=
+
+* reshape long 
+reshape long ch_pidp_ ch_sex_, i(pidp) j(ch_num) 
+
+drop if ch_pidp_==.
+drop ch_num 
+
+rename *_ *
+rename N ch_total
+label variable ch_total "Total number of biological children"
+
+
+save `family_matrix', replace 
+
 
 *---------------------------------------------------------------------------
 * 1 . Understanding Society
 *---------------------------------------------------------------------------
+tempfile temp_child_panel
 
 tempfile ukhls
-
 foreach wno of global UKHLSwaves {
 	
 	tempfile `wno'_wave
-
+	
 	use "ukhls/`wno'_egoalt.dta", clear
 	renpfix `wno'_    
-
+	
 	order hidp pidp 
 	sort hidp pno pidp apidp
 	keep hidp pidp apidp sex asex relationship_dv  
@@ -23,26 +60,23 @@ foreach wno of global UKHLSwaves {
 	* keep only children
 	keep if relationship_dv == 9 		// natural parent to alter 
 	drop relationship_dv
-
 	rename (apidp asex) (ch_pidp ch_sex)
 
 	duplicates drop pidp, force // single obs per individual
-
 	gen wave = "`wno'"
 
 	save ``wno'_wave', replace 
-
 }
 
 * Append all waves
+
 use `a_wave', clear
 foreach wno in b c d e f g h i j k l {
 	append using ``wno'_wave'
 }
-
 gen panel = "UKHLS"
-
 save `ukhls', replace
+
 
 
 *---------------------------------------------------------------------------
@@ -50,7 +84,6 @@ save `ukhls', replace
 *---------------------------------------------------------------------------
 
 tempfile bhps
-
 foreach wno of global BHPSwaves {
 
 	tempfile `wno'_wave
@@ -89,13 +122,14 @@ gen panel = "BHPS"
 save `bhps', replace
 
 
-
 *---------------------------------------------------------------------------
-* 3 . append all
+* 3 . append child data
 *---------------------------------------------------------------------------
 
 append using `ukhls'
 sort ${unit}
+
+
 
 *---------------------------------------------------------------------------
 * 4 . create individual - child panel 
@@ -114,6 +148,9 @@ drop wave panel hidp
 duplicates drop pidp ch_pidp, force
 sort pidp ch_pidp
 
+* merge with family matrix 
+merge 1:1 pidp ch_pidp using `family_matrix', nogen
+
 save `temp_child_panel', replace
 
 *---------------------------------------------------------------------------
@@ -122,23 +159,8 @@ save `temp_child_panel', replace
 
 use "${samp}/apc_file.dta", clear
 
-keep pidp birthy panel wave
+keep pidp birthy
 drop if birthy==.
-
-* keep first birth year if inconsistency 
-egen flag_by = nvals(birthy), by(pidp)		// birth year inconsistencies 
-
-sort ${unit}
-egen aux1 = seq(), by(pidp)
-gen  aux2 = birthy if aux1 == 1
-ereplace aux2 = max(birthy), by(pidp)
-
-replace birthy = aux2 if aux2!=. & flag_by>1
-
-drop aux* flag_by
-
-* 1 obs per individual 
-drop wave panel
 duplicates drop pidp, force 
 
 rename * ch_=
@@ -157,4 +179,21 @@ order pidp sex ch_pidp ch_birthy ch_sex ch_num
 notes: individual-child panel
 ***************************************
 save "${samp}/child_panel.dta", replace
+***************************************
+
+*---------------------------------------------------------------------------
+* 6 . save first child panel 
+*---------------------------------------------------------------------------
+
+egen aux = seq(), by(pidp ch_birthy)
+ereplace aux = max(aux), by(pidp ch_birthy)  // identify twins, triplets...
+
+keep if ch_num==1 & aux==1                   // single first children 
+
+drop aux ch_num flag_chsex flag_sex
+
+
+notes: cross-section of individuals and their first born
+***************************************
+save "${samp}/first_child.dta", replace
 ***************************************
