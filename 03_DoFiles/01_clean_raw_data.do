@@ -79,11 +79,18 @@ clear all
 set more off 
 
 if "`c(username)'"=="belen" {
-	do "C:/Users/belen/Onedrive/Documentos/GitHub/FertilityRQ/03_DoFiles/00_globals.do"
+
+	do "C:/Users/`c(username)'/OneDrive/Documentos/GitHub/FertilityRQ/03_DoFiles/00_globals.do"
+
 }   
 if "`c(username)'"=="Olatz" {
 	do "C:/Users/`c(username)'/OneDrive - Istituto Universitario Europeo/01_Research/FertilityRQ/03_DoFiles/00_globals.do"
 }
+
+
+cd "${samp}"
+
+
 
 
 *============================================================================
@@ -93,19 +100,19 @@ if "`c(username)'"=="Olatz" {
 cd "${path}"
 
 // * (1) Regressor panel: obtain RQ and individual characteristics
- quietly do "${dofiles}/aux_do/aux_build_relquality.do"
+// quietly do "${dofiles}/aux_do/aux_build_relquality.do"
 //
 // * (2) Age-cohort-period panel: fill in all individuals' ages and periods 
- quietly do "${dofiles}/aux_do/aux_build_agepanel.do"
+ //quietly do "${dofiles}/aux_do/aux_build_agepanel.do"
 //
 // * (3) Marital history panel: build panel of relationships
- quietly do "${dofiles}/aux_do/aux_build_tenure.do"
+// quietly do "${dofiles}/aux_do/aux_build_tenure.do"
 //
 // * (4) Household relation history: identify partners
 // quietly do "${dofiles}/aux_do/aux_build_relation_panel.do" 
 //
 // * (5) Information about first borns
- quietly do "${dofiles}/aux_do/aux_child_panel.do" 
+ //quietly do "${dofiles}/aux_do/aux_child_panel.do" 
 
 
 *============================================================================

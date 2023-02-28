@@ -1,3 +1,4 @@
+
 /*****************************************************************
 Project: 	Children and Relationship Quality
 Authors: 	Belén Rodríguez Moro and Olatz Román Blanco
@@ -32,17 +33,21 @@ cd "${samp}"
 
 
 ++++++++++++++++++ THINGS TO DO: 
-- compute specialization classification looking at shares: sum up paid and unpaid hours at a couple level, and compute each member relative shares. 
+- compute specialization classification looking at shares/ EARNINGS GAPS : sum up paid and unpaid hours at a couple level, and compute each member relative shares. 
 
 
 *============================================================= 
-*		          1. Labor market: paid hours
+*  1. 1ST STAGE: PAID AND UNPAID MARGINS CHANGE WITH FERTILITY
 *============================================================= 
 
 
-*----------------------------------------
-* 1. Cumulative distribution by gender
-*----------------------------------------
+*............................................................. 
+*            1. DESCRIPTIVE EVIDENCE
+*............................................................. 
+
+{
+* a. Cumulative distribution by gender: paid hours
+*-------------------------------------------------------------
 use newparent_sample.dta, clear
 drop if t_event < -4 
 
@@ -93,57 +98,9 @@ grc1leg women men,  ycommon legend(women)
 graph export "${graphs}/hours_1.png", replace	
 	
 	
-*--------------------------------------------------------
-* 2. Event study 
-*---------------------------------------------------------	
 
-** By unpaid division of labor
-*---------------------------------
-
-** Gender differences if traditional couples 
-use newparent_sample.dta, clear
-
-drop if t_event < -7 | t_event > 7	
-label variable jbhrs "Hours Worked"
-
-replace jbhrs = 0 if jbhrs ==. & (jbstat >= 3 & jbstat <= 6)          // impute zero paid hours to those who are under maternity leave or unemployed if missing
-replace jbhrs = . if jbhrs < 0
-
-keep if gbeh_q == 1
-event_difference jbhrs t_event 1 sex "${indiv_c} ${couple_c} ib2.wno" cidp "#5"
-graph display, ysize(5) xsize(9)
-graph export "${graphs}/paid_trad_diff.png", replace
-
-** Gender differences if egalitarian couples 
-use newparent_sample.dta, clear
-
-drop if t_event < -7 | t_event > 7	
-label variable jbhrs "Hours Worked"
-
-replace jbhrs = 0 if jbhrs ==. & (jbstat >= 3 & jbstat <= 6)          // impute zero paid hours to those who are under maternity leave or unemployed if missing
-replace jbhrs = . if jbhrs < 0
-
-
-keep if gbeh_q == 2
-event_difference jbhrs t_event 1 sex "${indiv_c} ${couple_c} ib2.wno" cidp "#5"
-graph display, ysize(5) xsize(9)
-graph export "${graphs}/paid_eg_diff.png", replace
-
-
-	
-	
-*------------> conclusion: egalitarian couples have the largest gender differentials in the impact of fertility on paid working hours
-	
-	
-	
-	
-*============================================================= 
-*    2. Differences in paid and unpaid margins: DESCRIPTIVE
-*============================================================= 	
-	
-*----------------------------------------
-* a. Change in working hours: home and market
-*----------------------------------------
+* b. Within-individual change in working hours: home and market
+*-----------------------------------------------------------------
 	
 ** Paid hours: 
 
@@ -238,9 +195,9 @@ twoway (histogram  jbhrs_diff_m if sex == 0,  color(`Cherry') )  ///
 grc1leg women men,  ycommon legend(women)
 graph export "${graphs}/hours_2.png", replace
 	   
-*----------------------------------------
-*3. Within couple changes: distribution 
-*----------------------------------------
+
+* c. Within-couple changes in working hours: home and market
+*-------------------------------------------------------------
 	   
 use newparent_sample.dta, clear
 drop if t_event < -4 | t_event > 7
@@ -342,13 +299,18 @@ twoway (histogram  jbhrs_change  ,  color(`Cherry') )  ///
 	   legend(order(1 "Paid work" 2 "Unpaid work") row(1) pos(north) size(small)) ///
 	   ytitle("Density", size(medsmall)) ylabel(#10, labsize(small)) ///
 	   xtitle("Change in the within-couple gap", size(medsmall)) xlabel(#20, labsize(small)) xline(0, lpattern(dash) lcolor(gs9))  name(men, replace) 		
-	graph export "${graphs}/hours_3.png", replace
-
+	graph export "${graphs}/hours_3.png", replace	
+	
+}	
 	
 	
-*============================================================= 
-*    3. Differences in paid and unpaid margins: INDEX
-*============================================================= 	
+*............................................................. 
+*            1. CAUSAL EVIDENCE: EVENT STUDY
+*.............................................................	
+	
+	
+** a. Within-couple changes in paid/unpaid/total hours 
+*-------------------------------------------------------
 	
 	
 ** Paid hours: 
@@ -409,12 +371,51 @@ graph display, ysize(5) xsize(9)
 *	
 *event_study hwhrs_diff t_event 1 "${indiv_c} ${couple_c} ib2.wno" cidp "-10(5)25"
 *graph display, ysize(5) xsize(9)
-		
+				
+				
+				
+
+** b. Gender differences by type of couple 
+*--------------------------------------------
+
+** Gender differences if traditional couples 
+use newparent_sample.dta, clear
+
+drop if t_event < -7 | t_event > 7	
+label variable jbhrs "Hours Worked"
+
+replace jbhrs = 0 if jbhrs ==. & (jbstat >= 3 & jbstat <= 6)          // impute zero paid hours to those who are under maternity leave or unemployed if missing
+replace jbhrs = . if jbhrs < 0
+
+keep if gbeh_q == 1
+event_difference jbhrs t_event 1 sex "${indiv_c} ${couple_c} ib2.wno" cidp "#5"
+graph display, ysize(5) xsize(9)
+graph export "${graphs}/paid_trad_diff.png", replace
+
+** Gender differences if egalitarian couples 
+use newparent_sample.dta, clear
+
+drop if t_event < -7 | t_event > 7	
+label variable jbhrs "Hours Worked"
+
+replace jbhrs = 0 if jbhrs ==. & (jbstat >= 3 & jbstat <= 6)          // impute zero paid hours to those who are under maternity leave or unemployed if missing
+replace jbhrs = . if jbhrs < 0
+
+
+keep if gbeh_q == 2
+event_difference jbhrs t_event 1 sex "${indiv_c} ${couple_c} ib2.wno" cidp "#5"
+graph display, ysize(5) xsize(9)
+graph export "${graphs}/paid_eg_diff.png", replace
+
+
+*------------> conclusion: egalitarian couples have the largest gender differentials in the impact of fertility on paid working hours
 	
 	
-*----------------------------------------
-*4. Within couple changes: hetegoreneity 
-*----------------------------------------	
+
+	
+
+* c. Classification of specialized couples
+*-----------------------------------------------------------	
 
 use newparent_sample.dta, clear
 drop if t_event < -4 
@@ -522,7 +523,9 @@ restore
 * conclusion ---------------> largest changes in specialization happen in the paid margin 
 
 
-
+*============================================================= 
+*  2. 2ND STAGE: DIFFERENCES IN RQ PATHS
+*============================================================= 
 
 *** Heterogeneity by RQ 
 
@@ -539,46 +542,5 @@ graph display, ysize(5) xsize(5)
 graph export "${graphs}/hours_7.png", replace
 
 restore 
-
-
-*----------------------------------------
-*4. Women changes: hetegoreneity 
-*----------------------------------------	
-	
-use newparent_sample.dta, clear
-drop if t_event < -4 | t_event > 7
-keep if panel == "UKHLS"
-
-
-*** Average paid hours 
-
-* Impute zero hours if nonemployed
-
-replace jbhrs = 0 if jbhrs ==. & (jbstat >= 3 & jbstat <= 6)
-egen jbhrs_pre  = mean(jbhrs) if t_event <0, by(pidp)
-egen jbhrs_post = mean(jbhrs) if t_event >=0, by(pidp)
-
-ereplace jbhrs_pre = max(jbhrs_pre), by(pidp)
-ereplace jbhrs_post = max(jbhrs_post), by(pidp)
-	   
-* Women changes: 	   
-
-gen jbhrs_change_w = jbhrs_post - jbhrs_pre if sex == 1
-  
-sum jbhrs_change_w, d	
-gen largest_change_w = (jbhrs_change_w >= `r(p75)')
-	
-label def largest_change_w 0 "Traditional arragement" 1 "Equal arragement"	
-label val largest_change_w largest_change_w
-	
-event_margins rq t_event 1 largest_change_w "${indiv_c} ${couple_c} ib2.wno" cidp "-1.5(.5).5"
-graph display, ysize(5) xsize(5)	
-	
-	
-sum t_event
-local min = -`r(min)' + 1
-replace t_event = t_event + `min'
-
-reg rq ib5.t_event##ib0.largest_change_w ${indiv_c} ${couple_c} ib2.wno if sex == 1, vce(cluster cidp)
 
 

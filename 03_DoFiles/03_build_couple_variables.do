@@ -25,7 +25,8 @@ clear all
 set more off 
 
 if "`c(username)'"=="belen" {
-	do "C:/Users/belen/Onedrive/Documentos/GitHub/FertilityRQ/03_DoFiles/00_globals.do"
+
+	do "C:/Users/`c(username)'/OneDrive/Documentos/GitHub/FertilityRQ/03_DoFiles/00_globals.do"
 }   
 if "`c(username)'"=="Olatz" {
 	do "C:/Users/`c(username)'/OneDrive - Istituto Universitario Europeo/01_Research/FertilityRQ/03_DoFiles/00_globals.do"
@@ -33,6 +34,9 @@ if "`c(username)'"=="Olatz" {
 
 
 cd "${samp}"
+
+
+
 
 use "individual_data.dta", clear
 sort ${unit}

@@ -48,8 +48,8 @@ global rq_c    "screlpar* screlhappy scdas*"
 global rq2_c    "scparoutint"
 
 global gnorm_c  "scopfam*"
-global gbeh_c   "hu*"
-global gbeh2_c  "howlng"
+global gbeh_c   "hu* jbstat paynu_dv jbhrs"
+global gbeh2_c  "howlng "
 
 global spl_c    "matl*"
 
