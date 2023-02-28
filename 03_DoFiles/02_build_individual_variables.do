@@ -251,11 +251,19 @@ ereplace newparent = max(event), by(pidp)
 replace event = 0 if nchild>1 & event==1
 ereplace newparent = max(event), by(pidp)
 
+* correct double events when 2 waves in 1 year 
+egen flag = sum(event), by(pidp)
+
+gsort ${unit}
+replace event = 0 if flag==2 & nchild==0 & nchild[_n+1]==1 & event[_n+1]==1                      // keep event when child appears 
+replace event = 0 if event==1 & event[_n-1]==1 & pidp==pidp[_n-1] & nchild>0 & nchild[_n-1]>0    // if +1 children, keep first event 
+replace event = 0 if event==1 & event[_n+1]==1 & pidp==pidp[_n+1] & nchild==0 & nchild[_n+1]==0  // if 0 children, keep second event 
+
 * label variables 
 label variable event "First child birth"
 label variable newparent "Becomes parent during sample"
 
-drop cum_nchild newmum newdad 
+drop cum_nchild newmum newdad flag
 
 
 *============================================================================
