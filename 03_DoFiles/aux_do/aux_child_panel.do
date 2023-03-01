@@ -13,6 +13,7 @@
 
 tempfile family_matrix
 
+cd "${path}"
 use "ukhls/xhhrel.dta" , clear
 
 * only data on biological children 

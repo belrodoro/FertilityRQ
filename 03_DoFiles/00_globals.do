@@ -3,9 +3,11 @@
 *----------------------------------------------------------------------------
 
 if "`c(username)'"=="belen" {
-    global base "C:/Users/belen/OneDrive - Istituto Universitario Europeo/FertilityRQ"	
-	global path "${base}/02_Data/Understanding_Society/stata/stata13_se"
+    global base "C:\Users\belen\OneDrive\Documentos\GitHub\FertilityRQ"	
+	global path "C:\Users\belen\OneDrive - Istituto Universitario Europeo\EUI\BHSP - US\Data files\stata\stata13_se"
 }   
+
+  
 if "`c(username)'"=="Olatz" {
 	global base "C:/Users/Olatz/OneDrive - Istituto Universitario Europeo/01_Research/FertilityRQ"
 	global path "C:/Users/Olatz/OneDrive - Istituto Universitario Europeo/02_Datasets/Understanding_Society/stata/stata13_se"
@@ -40,14 +42,14 @@ global spl_w   b c d e f g h i j k l			// parental leave
 global mothrw_w c d e f g h i j k l             // mothers return to work module
 
 * Control variable groups
-global all_c	"dvage birthy sex racel qfhigh_dv employ jbterm1 jbsemp paynu_dv fimnlabgrs_dv fimngrs_dv fimnnet_dv ndepchl_dv hhtype_dv scghql jbhrs scghq1_dv country urban_dv istrtdaty"
+global all_c	"dvage birthy sex racel qfhigh_dv employ jbterm1 jbsemp paynu_dv fimnlabgrs_dv fimngrs_dv fimnnet_dv ndepchl_dv hhtype_dv scghql jbhrs jbstat scghq1_dv country urban_dv istrtdaty"
 
 global rq_c    "screlpar* screlhappy scdas*"
 global rq2_c    "scparoutint"
 
 global gnorm_c  "scopfam*"
-global gbeh_c   "hu*"
-global gbeh2_c  "howlng"
+global gbeh_c   "hu* jbstat paynu_dv jbhrs"
+global gbeh2_c  "howlng "
 
 global spl_c    "matl*"
 
@@ -160,6 +162,82 @@ args outcome event_var event_t indep_vars clust_var y_labels
 	restore
 	replace `event_var' = `event_var' - `min'
 end
+
+// event study: superimpose two results
+capture program drop event_study_two 
+
+program define event_study_two
+args outcome_1 outcome_2 common event_var event_t indep_vars clust_var y_labels
+	
+	* 0. variables name
+	local varname_1 : variable label `outcome_1' 
+    local varname_2 : variable label `outcome_2'
+	
+	* 1. recode factor variable
+	qui sum `event_var'
+		local min = -`r(min)' + 1
+		local base = `min' - `event_t'
+	replace `event_var' = `event_var' + `min'
+
+	* 2. estimate models 
+	reg `outcome_1' ib`base'.`event_var' `indep_vars', vce(cluster `clust_var') 
+
+	tempfile event_study_1
+	parmest, saving(`event_study_1', replace)
+	
+	reg `outcome_2' ib`base'.`event_var' `indep_vars', vce(cluster `clust_var') 
+
+	tempfile event_study_2
+	parmest, saving(`event_study_2', replace)
+
+	* 3. modify stored estimates 
+	preserve
+	use `event_study_1', clear                                               // outcome 1
+
+	egen event = seq() if strpos(parm, "`event_var'") > 0
+	drop if event == .
+	replace event = event - `min'
+
+	rename min95 ci_lb_1
+	rename max95 ci_ub_1
+	gen coeff_1 = round(estimate, 0.001)
+	
+	keep event ci_lb_1 ci_ub_1 coeff_1
+	
+	save `event_study_1', replace 
+	
+    use `event_study_2', clear                                               // outcome 2
+
+	egen event = seq() if strpos(parm, "`event_var'") > 0
+	drop if event == .
+	replace event = event - `min'
+
+	rename min95 ci_lb
+	rename max95 ci_ub
+	gen coeff = round(estimate, 0.001)
+	
+	merge 1:1 event using `event_study_1', keep(3) nogen
+	* 4. plot 
+		
+	* x-axis labels
+	qui sum event
+		local lb = `r(min)'
+		local ub = `r(max)'
+			
+	colorpalette lin fruits, locals
+	twoway (rarea  ci_lb_1 ci_ub_1 event ,  sort color(${Blueberry}) fint(inten30) lw(none)) ///
+		   (connected coeff_1 event, lcolor(${Blueberry}) lpattern(dash_dot) mcolor(${Blueberry}) msymbol("sh"))  ///
+		   (rarea  ci_lb ci_ub event ,  sort color(${Tangerine}) fint(inten30) lw(none)) ///
+		   (connected coeff event, lcolor(${Tangerine}) lpattern(dash_dot) mcolor(${Tangerine}) msymbol("sh")) , ///
+		   xline(-.5, lpattern(dash) lcolor(gs11)) yline(0) ///
+		   ytitle("Impact on `common'", size(medsmall)) ylabel(`y_labels', labsize(small)) yscale(outergap(*-3) titlegap(*-3))  ///
+		   xtitle("Event-time (years)", size(medsmall)) xlabel(`lb'(2)`ub', labsize(small)) yscale(outergap(*-3))  ///
+		   legend(order (2 "`varname_1'" 4 "`varname_2'") row(1) pos(12) size(medsmall)) 
+		   
+	restore
+	replace `event_var' = `event_var' - `min'
+end
+
 
 // event study: marginal effects 
 capture program drop event_margins
