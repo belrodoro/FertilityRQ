@@ -59,11 +59,10 @@ sort ${unit}
 
 drop event newparent separate 
 
-merge 1:1 pidp panel wave using `women', keep(1 3) 
+merge 1:1 pidp panel wave using `women', nogen keep(1 3) 
 rename (cidp event t_event newparent separate gbeh* gnorm_q dadlv) f_= 
-rename _merge  merge2
 
-merge 1:1 pidp panel wave using `men', keep(1 3) 
+merge 1:1 pidp panel wave using `men', nogen keep(1 3) 
 
 foreach var of varlist cidp event t_event newparent gbeh* gnorm_q dadlv separate {
 	replace `var' = f_`var' if `var'==.
@@ -90,9 +89,6 @@ drop if cidp==.
 
 sort ${unit}
 
-br pidp event partner if aux==0
-
-br pidp event year if pidp==545740805
 
 ************************************
 save "newparent_sample.dta", replace
