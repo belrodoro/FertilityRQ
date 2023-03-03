@@ -360,17 +360,77 @@ event_study rq t_event 2 "${indiv_c} ${couple_c} ib2.wno" pidp "-1(.5).5"
 
 use newparent_sample.dta, clear
 
-keep if panel=="UKHLS"
+* create panel + wave number , to account for parents before ukhls
+sum wno if panel=="BHPS"
+replace wno = wno + `r(max)' if panel=="UKHLS"
 
+*------------------------------------------
+* time variable: wave 
+*------------------------------------------
 * create treatment cohort variable 
 gen cohort = event * wno
 ereplace cohort = max(cohort), by(pidp)
 
+* some without event during observation period
 keep if cohort>0
 
 csdid rq , i(pidp) t(wno) g(cohort) method(dripw)
-
+// 4,467 observations used 
+// only accounts for births with observed t0 and t1
 estat event
+csdid_plot 
 
+*------------------------------------------
+* time variable: age 
+*------------------------------------------
+* age variable increasing with wave : otherwise repeated age values (like year) 
+gsort ${unit}
+egen aux = seq(), by(pidp)
+replace aux = . if aux>1
+
+gen age_add = 0 if aux==1
+replace age_add = age_add[_n-1] + wno - wno[_n-1] if age_add==. & pidp==pidp[_n-1]
+
+gen age_dv = age * aux
+ereplace age_dv = max(age_dv), by(pidp)
+replace age_dv = age_dv + age_add
+
+drop aux age_add
+
+* cohort variable
+gen cohort_a = event * age_dv 
+ereplace cohort_a = max(cohort_a), by(pidp)
+
+csdid rq , i(pidp) t(age_dv) g(cohort_a) method(dripw)
+// 2,735 observations used 
+estat event
+csdid_plot 
+
+
+*------------------------------------------
+* time variable: tenure 
+*------------------------------------------
+* age variable increasing with wave : otherwise repeated age values (like year) 
+gsort ${unit}
+egen aux = seq(), by(pidp)
+replace aux = . if aux>1
+
+gen tenure_add = 0 if aux==1
+replace tenure_add = tenure_add[_n-1] + wno - wno[_n-1] if tenure_add==. & pidp==pidp[_n-1]
+
+gen tenure_dv = tenure * aux
+ereplace tenure_dv = max(tenure_dv), by(pidp)
+replace tenure_dv = tenure_dv + tenure_add
+
+drop aux tenure_add
+
+* cohort variable
+gen cohort_t = event * tenure_dv 
+ereplace cohort_t = max(cohort_t), by(pidp)
+
+csdid rq , i(pidp) t(tenure_dv) g(cohort_t) method(dripw)
+// 4,467 observations used 
+// only accounts for births with observed t0 and t1
+estat event
 csdid_plot 
 

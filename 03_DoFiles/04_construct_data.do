@@ -89,6 +89,7 @@ drop if cidp==.
 
 sort ${unit}
 
+
 ************************************
 save "newparent_sample.dta", replace
 ************************************
